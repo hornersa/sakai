@@ -1,9 +1,6 @@
-##
 ## Standard Header used by all portal views
 ## Don't put anything before the <!DOCTYPE or it breaks IE9
 ## DOCTYPE detection and puts it in quirks mode.
-##
-
 <!DOCTYPE html>
 <html lang="$!{locale}" dir="$!{dir}" class="Mrphs-html">
     <head>
@@ -18,6 +15,7 @@
         <link href="${pageScriptPath}jquery/cluetip/1.2.10/css/jquery.cluetip.css$!{portalCDNQuery}" rel="stylesheet">
         <link href="${pageScriptPath}jquery/qtip/jquery.qtip-latest.min.css$!{portalCDNQuery}" rel="stylesheet">
         <link href="${pageWebjarsPath}pnotify/2.1.0/pnotify.core.min.css$!{portalCDNQuery}" rel="stylesheet">
+	<link href="${pageWebjarsPath}pnotify/2.1.0/pnotify.buttons.min.css$!{portalCDNQuery}" rel="stylesheet">
         <link href="${pageWebjarsPath}cropper/2.3.2/dist/cropper.min.css$!{portalCDNQuery}" rel="stylesheet">
         <script src="${pageSkinRepo}/${pageSkin}/js/lib/modernizr.js$!{portalCDNQuery}"></script>
     #if ($useBullhornAlerts)
@@ -42,12 +40,14 @@
                         "enabled": $!{neoChatVideo}
                     }
                 },
+                "i18n": {},
                 "loggedIn": $!{loggedIn},
                 "portalPath": "$!{portalPath}",
                 "loggedOutUrl": "$!{loggedOutUrl}",
                 "siteId": "$!{siteId}",
                 "siteTitle": "$!{siteTitle}",
                 "shortDescription" : "$!{shortDescription}",
+                "toolsCollapsed": ${toolsCollapsed},
                 "locale": "$!{locale}",
                 "user": {
                     "id": "$!{userId}",

@@ -72,8 +72,8 @@
                 var renderedMembers = $(".roster-member").size();
                 // Without filter conditions get more pages if there are more members than rendered and rendered > 0
                 // If you have an active filter maybe you could display less members than total
-                // So get more pages only if rendered match a page size (10 is pagesize)
-                if (roster.site.membersTotal > renderedMembers && renderedMembers > 0 && renderedMembers % 10 === 0) {
+                // So get more pages only if rendered match a page size (10 is default pagesize)
+                if (roster.site.membersTotal > renderedMembers && renderedMembers > 0 && renderedMembers % roster.pageSize === 0) {
                     $("body").data("scroll-roster", true);
                     $(window).trigger('scroll.roster');
                 }
@@ -328,13 +328,14 @@
                 roster.render('members_header', {
                     viewEmail: roster.viewEmail,
                     viewUserDisplayId: roster.viewUserDisplayId,
+                    viewUserProperty: roster.viewUserProperty,
                     viewProfile: roster.currentUserPermissions.viewProfile,
                     viewGroup : roster.currentUserPermissions.viewGroup,
                     viewPicture: true,
                     viewSiteVisits: roster.currentUserPermissions.viewSiteVisits,
                     viewConnections: ((undefined != window.friendStatus) && roster.viewConnections),
                     enrollmentsMode: enrollmentsMode,
-                    showVisits: roster.showVisits
+                    showVisits: roster.showVisits,
                     }, 'roster-members-content');
             }
 
@@ -397,6 +398,8 @@
                 }
 
                 var members = data.members;
+                
+                roster.pageSize = (data.pageSize != undefined) ? data.pageSize : 10;
 
                 if (roster.nextPage === 0) {
                     var membersTotalString = roster.i18n.currently_displaying_participants.replace(/\{0\}/, data.membersTotal);
@@ -560,6 +563,7 @@
                 firstNameLastName: roster.firstNameLastName,
                 viewEmail: roster.viewEmail,
                 viewUserDisplayId: roster.viewUserDisplayId,
+                viewUserProperty: roster.viewUserProperty,
                 viewProfile: roster.currentUserPermissions.viewProfile,
                 viewGroup : roster.currentUserPermissions.viewGroup,
                 viewPicture: true,

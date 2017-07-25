@@ -21,6 +21,8 @@ body.is-logged-out{
 		font-size: 1.0em;
 		margin: 0;
 		padding: 0;
+		width: 100%;
+		text-align: right;
 	}
 
 	// LHS tool menu collapsed to show icons only and not tool titles.
@@ -329,8 +331,12 @@ nav#subSites{
 						background-color: $tool-menu-collapse-active-hover-background-color;
 						box-shadow: $tool-menu-collapse-active-hover-shadow;
 					}
+
+					span.fa-angle-double-left {
+						color: $tool-menu-collapse-active-icon-color;
+					}
 				}
-				i
+				span.fa-angle-double-left
 				{
 					@include transition( transform, 0.25s, ease-out, 0s ); /* animate the arrow direction change */
 				}

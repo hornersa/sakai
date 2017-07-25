@@ -443,6 +443,7 @@ public class PortalSiteHelperImpl implements PortalSiteHelper
 				&& (s.getId().equals(currentSiteId) || effectiveSite
 						.equals(currentSiteId));
 		m.put("isCurrentSite", Boolean.valueOf(isCurrentSite));
+		m.put("isPublished", s.isPublished());
 		m.put("isMyWorkspace", Boolean.valueOf(myWorkspaceSiteId != null
 				&& (s.getId().equals(myWorkspaceSiteId) || effectiveSite
 						.equals(myWorkspaceSiteId))));
@@ -710,7 +711,8 @@ public class PortalSiteHelperImpl implements PortalSiteHelper
 				boolean siteUpdate = SecurityService.unlock("site.upd", site.getReference());
 				if ( ! siteUpdate ) addMoreToolsUrl = null;
 
-				if ( ! ServerConfigurationService.getBoolean("portal.experimental.addmoretools", false) ) addMoreToolsUrl = null;
+				boolean legacyAddMoreToolsPropertyValue = ServerConfigurationService.getBoolean("portal.experimental.addmoretools", false);
+				if ( ! ServerConfigurationService.getBoolean("portal.addmoretools.enable", legacyAddMoreToolsPropertyValue) ) addMoreToolsUrl = null;
 
 				String pagePopupUrl = Web.returnUrl(req, "/page/");
 				
