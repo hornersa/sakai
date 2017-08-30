@@ -447,14 +447,16 @@ public class SimplePageBean {
 		public String Url;
 		public String label;
 		public String fa_icon = null;
+		public Boolean search = Boolean.FALSE;
 		public UrlItem(String Url, String label) {
 			this.Url = Url;
 			this.label = label;
 		}
-		public UrlItem(String Url, String label, String fa_icon) {
+		public UrlItem(String Url, String label, String fa_icon, Boolean search) {
 			this.Url = Url;
 			this.label = label;
 			this.fa_icon = fa_icon;
+			this.search = search;
 		}
 	}
 
@@ -2515,8 +2517,45 @@ public class SimplePageBean {
 	public String adjustPath(String op, Long pageId, Long pageItemId, String title) {
 		List<PathEntry> path = (List<PathEntry>)sessionManager.getCurrentToolSession().getAttribute(LESSONBUILDER_PATH);
 
+		// Allow the new portal lessons subnav to push a subpage on the context
+		if (op.equals("clear_and_push")) {
+			// clear path for top level subpage
+			path = new ArrayList<PathEntry>();
+
+			// add an entry for the parent page
+			SimplePage parentPage = null;
+
+			// the current page may have a parent
+			if (currentPage.getParent() != null && currentPage.getParent() != 0) {
+				parentPage = getPage(currentPage.getParent());
+
+			// try and get it from the current item
+			} else if (currentPageItemId != null) {
+				SimplePageItem item = getCurrentPageItem(currentPageItemId);
+				parentPage = getPage(item.getPageId());
+			}
+
+			PathEntry parentEntry = new PathEntry();
+			parentEntry.pageItemId = -1L;
+			if (parentPage == null) {
+				// we tried our best, default these values so things don't break
+				parentEntry.pageId = -1L;
+				parentEntry.title = "";
+			} else {
+				parentEntry.pageId = parentPage.getPageId();
+				parentEntry.title = parentPage.getTitle();
+			}
+			path.add(parentEntry);
+
+			// add the subpage
+			PathEntry entry = new PathEntry();
+			entry.pageId = pageId;
+			entry.pageItemId = pageItemId;
+			entry.title = title;
+			path.add(entry);  // put it on the end
+
 		// if no current path, op doesn't matter. we can just do the current page
-		if (path == null || path.size() == 0) {
+		} else if (path == null || path.size() == 0) {
 			PathEntry entry = new PathEntry();
 			entry.pageId = pageId;
 			entry.pageItemId = pageItemId;
@@ -7320,7 +7359,6 @@ public class SimplePageBean {
 			
 			item.setAttribute("questionShowPoll", String.valueOf(questionShowPoll));
 
-			simplePageToolDao.syncQRTotals(item);
 
 		}
 		
@@ -7385,6 +7423,10 @@ public class SimplePageBean {
 		setItemGroups(item, selectedGroups);
 
 		saveOrUpdate(item);
+
+		if(questionType.equals("multipleChoice")) {
+			simplePageToolDao.syncQRTotals(item);
+		}
 
 		regradeAllQuestionResponses(item.getId());
 		

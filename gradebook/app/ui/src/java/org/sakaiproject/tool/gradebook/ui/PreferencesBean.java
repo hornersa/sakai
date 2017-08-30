@@ -1,3 +1,18 @@
+/**
+ * Copyright (c) 2003-2013 The Apereo Foundation
+ *
+ * Licensed under the Educational Community License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *             http://opensource.org/licenses/ecl2
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /**********************************************************************************
 *
 * $Id$
@@ -22,7 +37,7 @@
 
 package org.sakaiproject.tool.gradebook.ui;
 
-import org.sakaiproject.tool.gradebook.Assignment;
+import org.sakaiproject.tool.gradebook.GradebookAssignment;
 import org.sakaiproject.tool.gradebook.Category;
 import org.sakaiproject.component.cover.ServerConfigurationService;
 
@@ -66,7 +81,7 @@ public class PreferencesBean {
 	 */
 	protected void loadPreferences() {
         assignmentSortAscending = true;
-        assignmentSortColumn = Assignment.DEFAULT_SORT;
+        assignmentSortColumn = GradebookAssignment.DEFAULT_SORT;
         
         categorySortAscending = true;
         categorySortColumn = Category.SORT_BY_NAME;
@@ -109,7 +124,7 @@ public class PreferencesBean {
         return defaultMaxDisplayedScoreRows;
     }
 
-	// Assignment sorting (for overview, assignment details, and possibly roster)
+	// GradebookAssignment sorting (for overview, assignment details, and possibly roster)
     public boolean isAssignmentSortAscending() {
         return assignmentSortAscending;
     }
@@ -151,7 +166,7 @@ public class PreferencesBean {
 		this.rosterTableSortColumn = rosterTableSortColumn;
 	}
 
-    // Assignment details table sorting
+    // GradebookAssignment details table sorting
 	public boolean isAssignmentDetailsTableSortAscending() {
 		return assignmentDetailsTableSortAscending;
 	}
@@ -183,7 +198,7 @@ public class PreferencesBean {
         this.courseGradeDetailsTableSortColumn = courseGradeDetailsTableSortColumn;
     }
     
-    // Assignment details table filter by section
+    // GradebookAssignment details table filter by section
     public Integer getAssignmentDetailsTableSectionFilter() {
         return assignmentDetailsTableSelectedSectionFilter;
     }

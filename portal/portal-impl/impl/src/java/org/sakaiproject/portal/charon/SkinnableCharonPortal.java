@@ -44,6 +44,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.sakaiproject.authz.api.Role;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.component.cover.ServerConfigurationService;
@@ -169,6 +170,9 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal
 	private PortalService portalService;
 	
 	private SecurityService securityService = null;
+
+	//Get user preferences
+	private PreferencesService preferencesService;
 
 	/**
 	 * Keyword to look for in sakai.properties copyright message to replace
@@ -533,7 +537,7 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal
 		if (prefix != null) portalTopUrl = portalTopUrl + prefix + "/";
 
 		rcontext.put("portalTopUrl", portalTopUrl);
-		rcontext.put("loggedIn", Boolean.valueOf(session.getUserId() != null));
+		rcontext.put("loggedIn", StringUtils.isNotBlank(session.getUserId()));
 		rcontext.put("siteId", siteId);
 
 		if (placement != null)
@@ -1048,10 +1052,20 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal
 			rcontext.put("googleTagManagerContainerId", googleTagManagerContainerId);
 		}
 
-		Session s = SessionManager.getCurrentSession();
-		rcontext.put("loggedIn", Boolean.valueOf(s.getUserId() != null));
-		rcontext.put("userId", s.getUserId());
-		rcontext.put("userEid", s.getUserEid());
+				
+		User currentUser = UserDirectoryService.getCurrentUser();
+		Role role = site != null && currentUser != null ? site.getUserRole(currentUser.getId()) : null;
+		
+		Preferences prefs = preferencesService.getPreferences(currentUser.getId());
+		String editorType = prefs.getProperties(PreferencesService.EDITOR_PREFS_KEY).getProperty(PreferencesService.EDITOR_PREFS_TYPE);
+
+		rcontext.put("loggedIn", StringUtils.isNotBlank(currentUser.getId()));
+		rcontext.put("userId", currentUser.getId());
+		rcontext.put("userEid", currentUser.getEid());
+		rcontext.put("userType", currentUser.getType());
+		rcontext.put("userSiteRole", role != null ? role.getId() : "");
+		rcontext.put("editorType", editorType);
+
 		rcontext.put("loggedOutUrl",ServerConfigurationService.getLoggedOutUrl());
 		rcontext.put("portalPath",ServerConfigurationService.getPortalUrl());
 		rcontext.put("timeoutDialogEnabled",Boolean.valueOf(ServerConfigurationService.getBoolean("timeoutDialogEnabled", true)));
@@ -1302,7 +1316,7 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal
                 if (site != null)
                 {                           
                     String strMathJaxEnabledForSite = site.getProperties().getProperty(MATHJAX_ENABLED);
-                    if (!StringUtils.isBlank(strMathJaxEnabledForSite))
+                    if (StringUtils.isNotBlank(strMathJaxEnabledForSite))
                     {
                         if (Boolean.valueOf(strMathJaxEnabledForSite))
                         {
@@ -1568,8 +1582,6 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal
 			String thisUser = SessionManager.getCurrentSessionUserId();
 			
 			//Get user preferences
-            PreferencesService preferencesService = (PreferencesService) ComponentManager.get(PreferencesService.class);
-
             Preferences prefs = preferencesService.getPreferences(thisUser);
 
 			boolean showServerTime = ServerConfigurationService.getBoolean("portal.show.time", true);
@@ -1970,6 +1982,8 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal
 		portalService = org.sakaiproject.portal.api.cover.PortalService.getInstance();
 		securityService = (SecurityService) ComponentManager.get("org.sakaiproject.authz.api.SecurityService");
 		chatHelper = org.sakaiproject.portal.api.cover.PortalChatPermittedHelper.getInstance();
+		preferencesService = ComponentManager.get(PreferencesService.class);
+
 		log.info("init()");
 
 		forceContainer = ServerConfigurationService.getBoolean("login.use.xlogin.to.relogin", true);

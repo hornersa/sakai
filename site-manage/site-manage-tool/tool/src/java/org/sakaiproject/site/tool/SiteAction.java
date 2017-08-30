@@ -1,3 +1,18 @@
+/**
+ * Copyright (c) 2003-2017 The Apereo Foundation
+ *
+ * Licensed under the Educational Community License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *             http://opensource.org/licenses/ecl2
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /**********************************************************************************
 
  * $URL$
@@ -1782,6 +1797,7 @@ public class SiteAction extends PagedResourceActionII {
 			if (site != null)
 			{
 				MathJaxEnabler.addMathJaxSettingsToEditToolsContext(context, site, state);  // SAK-22384
+				LessonsSubnavEnabler.addToEditToolsContext(context, site, state);
 				context.put("SiteTitle", site.getTitle());
 				context.put("existSite", Boolean.TRUE);
 				context.put("backIndex", "12");	// back to site info list page
@@ -2107,7 +2123,7 @@ public class SiteAction extends PagedResourceActionII {
 					if (!isMyWorkspace) {
 						// if the add participant helper is available, not
 						// stealthed and not hidden, show the link
-						if (notStealthOrHiddenTool("sakai-site-manage-participant-helper")) {
+						if (notStealthOrHiddenTool(getAddUserHelper(site))) {
 							b.add(new MenuEntry(rb.getString("java.addp"),
 									"doParticipantHelper"));
 						}
@@ -2501,6 +2517,7 @@ public class SiteAction extends PagedResourceActionII {
 
 			// SAK-22384 mathjax support
 			MathJaxEnabler.addMathJaxSettingsToSiteInfoContext(context, site, state);
+			LessonsSubnavEnabler.addToSiteInfoContext(context, site, state);
 
 			return (String) getContext(data).get("template") + TEMPLATE[12];
 
@@ -2650,6 +2667,7 @@ public class SiteAction extends PagedResourceActionII {
 
 			// SAK-22384 mathjax support
 			MathJaxEnabler.addMathJaxSettingsToSiteInfoContext(context, site, state);
+			LessonsSubnavEnabler.addToSiteInfoContext(context, site, state);
 						
 			return (String) getContext(data).get("template") + TEMPLATE[13];
 		case 14:
@@ -2714,6 +2732,7 @@ public class SiteAction extends PagedResourceActionII {
 
 			// SAK-22384 mathjax support
 			MathJaxEnabler.addMathJaxSettingsToSiteInfoContext(context, site, state);
+			LessonsSubnavEnabler.addToSiteInfoContext(context, site, state);
 
 			return (String) getContext(data).get("template") + TEMPLATE[14];
 		case 15:
@@ -2737,6 +2756,7 @@ public class SiteAction extends PagedResourceActionII {
 			// put tool selection into context
 			toolSelectionIntoContext(context, state, site_type, site.getId(), overridePageOrderSiteTypes);
 			MathJaxEnabler.addMathJaxSettingsToEditToolsConfirmationContext(context, site, state, STATE_TOOL_REGISTRATION_TITLE_LIST);  // SAK-22384            
+			LessonsSubnavEnabler.addSettingsToEditToolsConfirmationContext(context, site, state);
 
 			return (String) getContext(data).get("template") + TEMPLATE[15];
 		case 18:
@@ -2905,8 +2925,8 @@ public class SiteAction extends PagedResourceActionII {
 					 Map<String, Object> toolMap = entry.getValue();
 					 String toolId = entry.getKey();
 					// get the configuration html for tool is post-add configuration has been requested (by Laura)
-					String showDialog = toolMap.get(LTIService.LTI_SITEINFOCONFIG).toString();
-					if ( ! "1".equals(showDialog) ) continue;
+					Object showDialog = toolMap.get(LTIService.LTI_SITEINFOCONFIG);
+					if ( showDialog == null || ! "1".equals(showDialog.toString()) ) continue;
 
 					String ltiToolId = toolMap.get("id").toString();
 					String[] contentToolModel=m_ltiService.getContentModel(Long.valueOf(ltiToolId), site.getId());
@@ -3272,7 +3292,7 @@ public class SiteAction extends PagedResourceActionII {
 				context.put("duplicatedName", state
 						.getAttribute(SITE_DUPLICATED_NAME));
 			}
-			
+			context.put( CONTEXT_IS_ADMIN, SecurityService.isSuperUser() );
 			// Add option to also copy ScoringComponent associations
 			ScoringService scoringService = (ScoringService)  ComponentManager.get("org.sakaiproject.scoringservice.api.ScoringService"); 
 			ScoringAgent scoringAgent = scoringService.getDefaultScoringAgent();
@@ -3296,6 +3316,7 @@ public class SiteAction extends PagedResourceActionII {
 			}
 			
 			context.put("titleMaxLength", state.getAttribute(STATE_SITE_TITLE_MAX));
+			context.put("siteIdMaxLength", 99);
 			return (String) getContext(data).get("template") + TEMPLATE[29];
 		case 36:
 			/*
@@ -3802,7 +3823,28 @@ public class SiteAction extends PagedResourceActionII {
 		// should never be reached
 		return (String) getContext(data).get("template") + TEMPLATE[0];
 	}
-	
+
+	/**
+	 * Finds the tool ID to use for the adding participants to the site.
+	 * Also checks that the configured tool is a valid helper.
+	 * @param site The site to add users to.
+	 * @return The tool ID.
+	 */
+	private String getAddUserHelper(Site site) {
+		String helperId = site.getProperties().getProperty("sitemanage.add.user.tool");
+		if (helperId == null) {
+			helperId = ServerConfigurationService.getString(
+					"sitemanage.add.user.tool", "sakai-site-manage-participant-helper"
+			);
+		}
+		// Validate it's a helpers before attempting to use it.
+		Tool tool = ToolManager.getTool(helperId);
+		if (tool == null || !tool.getCategories().contains("sakai.helper")) {
+			helperId = "sakai-site-manage-participant-helper";
+		}
+		return helperId;
+	}
+
 	private void addAccess(Context context, Map<String, AdditionalRole> access) {
 		boolean disableAdditional = access.size() == 0;
 		context.put("disableAdditional", disableAdditional);
@@ -4336,7 +4378,7 @@ public class SiteAction extends PagedResourceActionII {
 				HELPER_ID + ".siteId", ((Site) getStateSite(state)).getId());
 
 		// launch the helper
-		startHelper(data.getRequest(), "sakai-site-manage-participant-helper");
+		startHelper(data.getRequest(), getAddUserHelper(getStateSite(state)));
 	}
 	
 	/**
@@ -7552,6 +7594,7 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 		} else if (getStateSite(state) != null && ("13".equals(currentIndex) || "14".equals(currentIndex)))
 		{
 			MathJaxEnabler.removeMathJaxAllowedAttributeFromState(state);  // SAK-22384
+			LessonsSubnavEnabler.removeFromState(state);
 			state.setAttribute(STATE_TEMPLATE_INDEX, "12");
 		} else if ("15".equals(currentIndex)) {
 			params = data.getParameters();
@@ -8246,6 +8289,7 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 
 		// SAK-22384 mathjax support
 		MathJaxEnabler.prepareMathJaxAllowedSettingsForSave(Site, state);
+		LessonsSubnavEnabler.prepareSiteForSave(Site, state);
 				
 		if (state.getAttribute(STATE_MESSAGE) == null) {
 			try {
@@ -9660,13 +9704,21 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 			 */
 			if (forward) {
 				if (state.getAttribute(SITE_DUPLICATED) == null) {
-					if (StringUtils.trimToNull(params.getString("title")) == null) {
-						addAlert(state, rb.getString("java.dupli") + " ");
+					if ((SecurityService.isSuperUser())&& ((StringUtils.trimToNull(params.getString("newSiteId")) != null)&&(SiteService.siteExists(params.getString("newSiteId"))))){
+					    addAlert(state, rb.getString("sitdup.idused") + " ");
+					} else if (StringUtils.trimToNull(params.getString("title")) == null) {
+					    addAlert(state, rb.getString("java.dupli") + " ");
 					} else {
 						String title = params.getString("title");
 						state.setAttribute(SITE_DUPLICATED_NAME, title);
 
-						String newSiteId = IdManager.createUuid();
+						String newSiteId = null;
+						if (StringUtils.trimToNull(params.getString("newSiteId")) == null) {
+						    newSiteId = IdManager.createUuid();
+						} else{
+						    newSiteId = params.getString("newSiteId");
+						}
+
 						try {
 							String oldSiteId = (String) state
 									.getAttribute(STATE_SITE_INSTANCE_ID);
@@ -9685,7 +9737,7 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 
 							// SAK-20797
 							long oldSiteQuota = this.getSiteSpecificQuota(oldSiteId);
-							
+
 							Site site = SiteService.addSite(newSiteId,
 									getStateSite(state));
 							
@@ -11529,7 +11581,10 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 		{
 			commitSite(site);
 		}
-		
+
+		if (LessonsSubnavEnabler.prepareSiteForSave(site, state)) {
+			commitSite(site);
+		}
 	} // saveFeatures
 
 	/**
@@ -11698,14 +11753,15 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 					if ( toolMap == null ) continue;
 
 					// Decide if any LTI tools need a configuration dialog
-					String showDialog = toolMap.get(LTIService.LTI_SITEINFOCONFIG).toString();
+					Object showDialog = toolMap.get(LTIService.LTI_SITEINFOCONFIG);
 					if (existingLtiIds == null)
 					{
 						ltiToolNeedsConfig = true;
 					}
 					else
 					{
-						if (!existingLtiIds.keySet().contains(ltiToolId) && "1".equals(showDialog))
+						if (!existingLtiIds.keySet().contains(ltiToolId) && 
+							showDialog!= null && "1".equals(showDialog.toString()))
 						{
 							// there are some new lti tool(s) selected that need a configuration dialog
 							ltiToolNeedsConfig = true;
@@ -12613,6 +12669,7 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 		state.removeAttribute(STATE_TOOL_REGISTRATION_LIST);
 		state.removeAttribute(STATE_TOOL_REGISTRATION_TITLE_LIST);
 		state.removeAttribute(STATE_TOOL_REGISTRATION_SELECTED_LIST);
+		LessonsSubnavEnabler.removeFromState(state);
 	}
 
 	private List orderToolIds(SessionState state, String type, List<String> toolIdList, boolean synoptic) {
@@ -12820,6 +12877,7 @@ private Map<String,List> getTools(SessionState state, String type, Site site) {
 		} else if (option.equalsIgnoreCase("continue")) {
 			// continue
 			MathJaxEnabler.applySettingsToState(state, params);  // SAK-22384
+			LessonsSubnavEnabler.applyToolSettingsToState(state, site, params);
 
 			doContinue(data);
 		} else if (option.equalsIgnoreCase("back")) {

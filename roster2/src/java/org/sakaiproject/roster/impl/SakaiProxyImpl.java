@@ -1,3 +1,18 @@
+/**
+ * Copyright (c) 2010-2017 The Apereo Foundation
+ *
+ * Licensed under the Educational Community License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *             http://opensource.org/licenses/ecl2
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*
 * Licensed to The Apereo Foundation under one or more contributor license
 * agreements. See the NOTICE file distributed with this work for
@@ -20,9 +35,11 @@
 package org.sakaiproject.roster.impl;
 
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.sakaiproject.entity.api.serialize.SerializablePropertiesAccess;
+import org.sakaiproject.entity.api.ResourceProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sakaiproject.api.privacy.PrivacyManager;
@@ -483,6 +500,8 @@ public class SakaiProxyImpl implements SakaiProxy, Observer {
 						filtered.addAll(filterHiddenMembers(unfiltered, currentUserId, site.getId(), group));
 					}
 				}
+				// The group loop is shuffling members, sort the list again
+				Collections.sort(filtered,memberComparator);
 			} else if (null != site.getGroup(groupId)) {
 				// get all members of requested groupId if current user is
 				// member
@@ -618,10 +637,19 @@ public class SakaiProxyImpl implements SakaiProxy, Observer {
 		rosterMember.setSortName(user.getSortName());
 
 		Map<String, String> userPropertiesMap = new HashMap<>();
-		Map<String, Object> props = ((SerializablePropertiesAccess) user.getProperties()).getSerializableProperties();
-		for (String propKey : props.keySet() ) {
-		    userPropertiesMap.put(propKey, (String) props.get(propKey));
-		}
+		ResourceProperties props = user.getProperties();
+
+		// avoid multi-valued properties by using ResourceProperties.getProperty()
+		props.getPropertyNames().forEachRemaining(p -> userPropertiesMap.put(p, props.getProperty(p)));
+
+		// remove null values from map
+		userPropertiesMap.values().removeIf(Objects::isNull);
+
+		// filter values that are configured to be removed
+		Pattern regex = Pattern.compile(serverConfigurationService.getString("roster.filter.user.properties.regex", "^udp\\.dn$"));
+		Set<String> keysToRemove = userPropertiesMap.keySet().stream().filter(regex.asPredicate()).collect(Collectors.toSet());
+		userPropertiesMap.keySet().removeAll(keysToRemove);
+
 		rosterMember.setUserProperties(userPropertiesMap);
 
 		for (Group group : groups) {
@@ -1179,8 +1207,10 @@ public class SakaiProxyImpl implements SakaiProxy, Observer {
 
         if (arg instanceof Event) {
             Event event = (Event) arg;
-            if (SiteService.SECURE_UPDATE_SITE_MEMBERSHIP.equals(event.getEvent())) {
-                if (log.isDebugEnabled()) log.debug("Site membership updated. Clearing caches ...");
+            String eventName = event.getEvent();
+            if (SiteService.SECURE_UPDATE_SITE_MEMBERSHIP.equals(eventName)
+                    || SiteService.SECURE_UPDATE_GROUP_MEMBERSHIP.equals(eventName)) {
+                log.debug("Site membership or groups updated. Clearing caches ...");
                 String siteId = event.getContext();
 
                 Cache enrollmentsCache = getCache(ENROLLMENTS_CACHE);
