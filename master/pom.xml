@@ -113,13 +113,13 @@
     <sakai.spring.test.artifactId>spring-test</sakai.spring.test.artifactId>
     <sakai.spring.test.version>4.3.6.RELEASE</sakai.spring.test.version>
     <sakai.tika.version>1.14</sakai.tika.version>
-    <sakai.tomcat.version>8.0.41</sakai.tomcat.version>
+    <sakai.tomcat.version>8.5.20</sakai.tomcat.version>
     <sakai.velocity.version>1.6.4</sakai.velocity.version>
     <sakai.xerces.impl.version>2.11.0</sakai.xerces.impl.version>
     <sakai.xerces.api.version>2.6.2</sakai.xerces.api.version>
     <sakai.log4j.version>1.2.17</sakai.log4j.version>
     <sakai.slf4j.version>1.7.21</sakai.slf4j.version>
-    <sakai.poi.version>3.16</sakai.poi.version>
+    <sakai.poi.version>3.17</sakai.poi.version>
     <sakai.mockito.version>2.7.22</sakai.mockito.version>
     <sakai.powermock.version>1.7.0RC4</sakai.powermock.version>
     <sakai.okiosid.version>2.0</sakai.okiosid.version>
@@ -143,12 +143,10 @@
     <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
     <!-- Default empty unless profile activation -->
     <random-source></random-source>
-    <!-- Either use a tag or a SHA so the version is predictable.
-         If you update this you must also currently update the value inlibrary/src/webapp/editor/ckeditor.launch.js
-         Source at https://github.com/w8tcha/CKEditor-AutoSave-Plugin -->
-    <ckeditor.autosave.version>b88e3878f0c7442a52e542f67e76d97e2ce32f80</ckeditor.autosave.version>
-    <!-- Source at https://github.com/w8tcha/CKEditor-WordCount-Plugin -->
-    <ckeditor.wordcount.version>b29a29d4dc8a42732ce46720e1efc30c826e4c93</ckeditor.wordcount.version>
+
+    <!-- These should only be updated when the webjars version is updated -->
+    <ckeditor.autosave.version>786318aefed553a62cebbe4cd10b67c3ab266437</ckeditor.autosave.version>
+    <ckeditor.wordcount.version>b29a29d4dc8a42732ce46720e1efc30c826e4c9</ckeditor.wordcount.version>
     <ckeditor.a11ychecker.version>1.1.0</ckeditor.a11ychecker.version>
     <ckeditor.balloonpanel.version>4.6.2</ckeditor.balloonpanel.version>
   </properties>
