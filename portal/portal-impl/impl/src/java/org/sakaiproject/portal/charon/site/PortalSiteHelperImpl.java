@@ -340,7 +340,7 @@ public class PortalSiteHelperImpl implements PortalSiteHelper
 
         portalService.addRecentSite(currentSiteId);
 
-		return portalService.getRecentSites();
+                return portalService.getRecentSites().stream().filter(m -> ! isSitePinned(m)).collect(Collectors.toList());
 	}
 
 	private boolean isSitePinned(String siteId) {
