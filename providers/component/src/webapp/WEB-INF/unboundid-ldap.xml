@@ -13,7 +13,7 @@
 		<!-- Required. Uses Unboundid SingleServerSet by default. Easy to modify code to use FailoverServerSet or RoundRobinServerSet. -->
 		<property name="ldapHost">
 			<list>
-				<value>10.1.1.1</value>
+				<value>ds.plu.edu</value>
 			</list>
 		</property>
 
@@ -22,36 +22,36 @@
 			connection is usually on 636 -->
 		<property name="ldapPort">
 			<list>
-				<value>389</value>
+				<value>636</value>
 			</list>
 		</property>
 
 		<!-- Optional. DN to which to bind for directory searches. 
 			Typically only necessary if autoBind is true -->
-		<!-- property name="ldapUser">
-			<value>attr=value,attr=value,attr=value</value>
-		</property -->
+		<property name="ldapUser">
+			<value>uid=dmcuser,ou=Special Users,dc=plu,dc=edu</value>
+		</property>
 
 		<!-- Optional. Password for ldapUser defined above -->
-		<!--  property name="ldapPassword">
+		<property name="ldapPassword">
 			<value>usually-set-this-value-in-security-dot-properties</value>
-		</property -->
+		</property>
 
 		<!-- Optional. Enables/disables secure LDAP connections.
 			defaults to UnboundidDirectoryProvider.DEFAULT_IS_SECURE_CONNECTION (false) -->
-		<!-- property name="secureConnection">
-			<value>false</value>
-		</property -->
+		<property name="secureConnection">
+			<value>true</value>
+		</property>
 
 		<!-- Optional. Indicate if connection allocation should
 			implicitly bind as ${ldapUser}. Defaults to false -->
-		<!-- property name="autoBind">
-			<value>false</value>
-		</property -->
+		<property name="autoBind">
+			<value>true</value>
+		</property>
 
 		<!-- Optional, but usually specified. Base DN for directory searches. -->
 		<property name="basePath">
-			<value>dc=sakaiproject,dc=org</value>
+			<value>dc=plu,dc=edu</value>
 		</property>
 
 		<!-- Optional. Indicate if connections should follow
@@ -200,11 +200,17 @@
 		implementation, it is sufficient to specify attribute mappings here
 		and dispense with defining a org.sakaiproject.unboundid.LdapAttributeMapper bean.
 		This preserves forward compatibility of pre-2.5 config -->
-		<!--  property name="attributeMappings">
+		<!-- property name="attributeMappings">
 			<map>
 				<entry key="logicalAttrName">
 					<value>physicalAttrName</value>
 				</entry>
+				<entry key="login"><value>uid</value></entry>
+                                <entry key="distinguishedName"><value>dn</value></entry>
+                                <entry key="firstName"><value>givenName</value></entry>
+                                <entry key="lastName"><value>sn</value></entry>
+                                <entry key="email"><value>mail</value></entry>
+				<entry key="mailAlternateAddress"><value>mailAlternateAddress</value></entry>
 			</map>
 		</property -->
 		
@@ -261,11 +267,14 @@
 -->
 				<entry key="login"><value>uid</value></entry>         
 				<entry key="firstName"><value>givenName</value></entry> 
-				<entry key="preferredFirstName"><value>preferredName</value></entry>
+				<!-- entry key="preferredFirstName"><value>preferredName</value></entry -->
 				<entry key="lastName"><value>sn</value></entry> 
 				<entry key="email"><value>mail</value></entry>  
-				<entry key="groupMembership"><value>groupMembership</value></entry>   
-				<entry key="jpegPhoto"><value>jpegPhoto</value></entry>   
+				<!-- entry key="groupMembership"><value>groupMembership</value></entry>   
+				<entry key="jpegPhoto"><value>jpegPhoto</value></entry -->   
+
+                                <entry key="distinguishedName"><value>dn</value></entry>
+				<entry key="mailAlternateAddress"><value>mailAlternateAddress</value></entry>
 			</map>
 		</property>
 		
