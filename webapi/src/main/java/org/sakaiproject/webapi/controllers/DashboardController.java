@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import org.apache.commons.fileupload.FileItem;
 
+import org.sakaiproject.portal.api.PortalConstants;
 import org.sakaiproject.webapi.beans.DashboardRestBean;
 import org.sakaiproject.announcement.api.AnnouncementMessage;
 import org.sakaiproject.announcement.api.AnnouncementService;
@@ -118,16 +119,16 @@ public class DashboardController extends AbstractSakaiApiController implements E
     @PostConstruct
     public void init() {
 
-        boolean tasksEnabled = serverConfigurationService.getBoolean("dashboard.tasks.enabled", false);
+        boolean tasksEnabled = serverConfigurationService.getBoolean(PortalConstants.PROP_DASHBOARD_TASKS_ENABLED, false);
 
         // Load up all the available widgets, from properties
-        courseWidgets = serverConfigurationService.getStringList("dashboard.course.widgets", null);
+        courseWidgets = new ArrayList<>(serverConfigurationService.getStringList("dashboard.course.widgets", null));
         if (courseWidgets.isEmpty()) {
             courseWidgets = new ArrayList<>(List.of("tasks", "announcements", "calendar","forums", "grades"));
         }
         if (!tasksEnabled) courseWidgets.remove("tasks");
 
-        homeWidgets = serverConfigurationService.getStringList("dashboard.home.widgets", null);
+        homeWidgets = new ArrayList<>(serverConfigurationService.getStringList("dashboard.home.widgets", null));
         if (homeWidgets.isEmpty()) {
             homeWidgets = new ArrayList<>(List.of("tasks", "announcements", "calendar","forums", "grades"));
         }
@@ -136,21 +137,21 @@ public class DashboardController extends AbstractSakaiApiController implements E
         defaultHomeLayout = new ArrayList<>(List.of("tasks","announcements", "calendar", "grades", "forums"));
         if (!tasksEnabled) defaultHomeLayout.remove("tasks");
 
-        List<String> courseWidgetLayout1 = serverConfigurationService.getStringList("dashboard.course.widget.layout1", null);
+        List<String> courseWidgetLayout1 = new ArrayList<>(serverConfigurationService.getStringList("dashboard.course.widget.layout1", null));
         if (courseWidgetLayout1 == null) {
             courseWidgetLayout1 = new ArrayList<>(List.of("tasks", "calendar", "announcements", "grades"));
         }
         if (!tasksEnabled) courseWidgetLayout1.remove("tasks");
         defaultWidgetLayouts.put("1", courseWidgetLayout1);
 
-        List<String> courseWidgetLayout2 = serverConfigurationService.getStringList("dashboard.course.widget.layout2", null);
+        List<String> courseWidgetLayout2 = new ArrayList<>(serverConfigurationService.getStringList("dashboard.course.widget.layout2", null));
         if (courseWidgetLayout2 == null) {
             courseWidgetLayout2 = new ArrayList<>(List.of("tasks", "calendar", "forums", "grades", "announcements"));
         }
         if (!tasksEnabled) courseWidgetLayout2.remove("tasks");
         defaultWidgetLayouts.put("2", courseWidgetLayout2);
 
-        List<String> courseWidgetLayout3 = serverConfigurationService.getStringList("dashboard.course.widget.layout3", null);
+        List<String> courseWidgetLayout3 = new ArrayList<>(serverConfigurationService.getStringList("dashboard.course.widget.layout3", null));
         if (courseWidgetLayout3 == null) {
             courseWidgetLayout3 = new ArrayList<>(List.of("tasks", "calendar", "announcements", "grades", "forums"));
         }
@@ -221,7 +222,7 @@ public class DashboardController extends AbstractSakaiApiController implements E
         } else {
             try {
                 List<String> layout = (new ObjectMapper()).readValue(layoutJson, ArrayList.class);
-                if (!serverConfigurationService.getBoolean("dashboard.tasks.enabled", false))  {
+                if (!serverConfigurationService.getBoolean(PortalConstants.PROP_DASHBOARD_TASKS_ENABLED, false))  {
                     layout.remove("tasks");
                 }
                 bean.setLayout(layout);
@@ -289,7 +290,7 @@ public class DashboardController extends AbstractSakaiApiController implements E
             } else {
                 Map<String, Object> dashboardConfig = (new ObjectMapper()).readValue(dashboardConfigJson, HashMap.class);
                 List<String> layout = (List<String>) dashboardConfig.get("layout");
-                if (!serverConfigurationService.getBoolean("dashboard.tasks.enabled", false))  {
+                if (!serverConfigurationService.getBoolean(PortalConstants.PROP_DASHBOARD_TASKS_ENABLED, false))  {
                     layout.remove("tasks");
                 }
                 bean.setLayout(layout);

@@ -220,6 +220,7 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal {
     private boolean sakaiThemesEnabled;
     private boolean sakaiTutorialEnabled;
     private boolean showServerTime;
+    private boolean tasksEnabled;
     private boolean timeoutDialogEnabled;
     private boolean topLogin;
     private boolean useBullhornAlerts;
@@ -313,6 +314,7 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal {
         serviceVersion = serverConfigurationService.getString(PROP_SERVICE_VERSION, "?");
         showServerTime = serverConfigurationService.getBoolean(PROP_SHOW_SERVER_TIME, true);
         skinRepo = serverConfigurationService.getString(PROP_SKIN_REPO);
+        tasksEnabled = serverConfigurationService.getBoolean(PROP_DASHBOARD_TASKS_ENABLED, false);
         timeoutDialogEnabled = serverConfigurationService.getBoolean(PROP_PORTAL_TIMEOUT_DIALOG_ENABLED, true);
         timeoutDialogWarningSeconds = serverConfigurationService.getInt(PROP_PORTAL_TIMEOUT_DIALOG_WARN_SECONDS, 600);
         toolUrlPrefix = serverConfigurationService.getToolUrl();
@@ -1057,6 +1059,8 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal {
 
         rcontext.put("debugNotifications", debugNotifications);
 
+        rcontext.put("tasksEnabled" , tasksEnabled);
+
         return rcontext;
     }
 
@@ -1578,6 +1582,10 @@ public class SkinnableCharonPortal extends HttpServlet implements Portal {
             rcontext.put("bottomNavServer", serverId);
             rcontext.put("useBullhornAlerts", useBullhornAlerts);
             rcontext.put("bullhornAlertCount", useBullhornAlerts ? userMessagingService.getNotifications().size() : 0);
+            rcontext.put("chromeInfoUrl", serverConfigurationService.getString("notifications.chrome.info.url", ""));
+            rcontext.put("firefoxInfoUrl", serverConfigurationService.getString("notifications.firefox.info.url", ""));
+            rcontext.put("safariInfoUrl", serverConfigurationService.getString("notifications.safari.info.url", ""));
+            rcontext.put("edgeInfoUrl", serverConfigurationService.getString("notifications.edge.info.url", ""));
             rcontext.put("faviconURL", favIconUrl);
 
             // SAK-25931 - Do not remove this from session here - removal is done by /direct

@@ -60,10 +60,6 @@
   #gradeTableWrapper .handsontable tr > *:nth-child(1){
     text-align: left;
   }
-  #gradeTableWrapper .handsontable tbody tr > *:nth-child(1) .relative,
-  #gradeTableWrapper .handsontable tbody tr > *:nth-child(2) .relative {
-    padding: 2px 8px;
-  }
   #gradeTableWrapper .handsontable tbody tr > *:nth-child(1) .relative .gb-value {
     overflow: hidden;
   }
@@ -542,10 +538,10 @@
   }
   .gb-hidden-column-visual-cue {
     position: absolute;
-    top: 0;
-    right: -10px;
+    top: -6px;
+    right: -16px;
     cursor: pointer;
-    width: 19px;
+    width: 30px;
     border: 1px solid transparent;
     height: 15px;
     line-height: 14px;
