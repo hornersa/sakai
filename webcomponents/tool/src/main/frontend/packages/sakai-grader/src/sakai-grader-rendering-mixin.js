@@ -516,7 +516,7 @@ export const graderRenderingMixin = Base => class extends Base {
                     </button>
                   </div>
                 </div>
-                <div class="mt-2 ms-3 ${this._showRemoveFeedbackComment ? "d-block" : "d-none"}">
+                <div class="mt-2 ms-3 ${!this._feedbackCommentEditorShowing ? "d-block" : "d-none"}">
                   <button class="btn btn-transparent text-decoration-underline"
                       @click=${this._removeFeedbackComment}>
                     ${this.i18n["gen.remove"]}
@@ -579,7 +579,7 @@ export const graderRenderingMixin = Base => class extends Base {
                 <div id="grader-submission-history" class="d-${this._showingHistory ? "block" : "none"}">
                   ${this._submission.history.comments ? html`
                     <div id="grader-history-comments-wrapper">
-                      <div class="grader-history-title">${this.i18n.feedback_comments}</div>
+                      <div class="grader-history-title">${this.i18n.previous_submissions}</div>
                       <div class="grader-history-block">${unsafeHTML(this._submission.history.comments)}</div>
                     </div>
                   ` : nothing }
@@ -625,14 +625,12 @@ export const graderRenderingMixin = Base => class extends Base {
                     </button>
                   </div>
                 </div>
-                ${!this.modified || this._submission.privateNotes === this._nonEditedSubmission.privateNotes ? html`
                 <div class="mt-2 ms-3 ${this._privateNotesEditorShowing ? "d-none" : "d-block"}">
                   <button class="btn btn-transparent text-decoration-underline"
                       @click=${this._removePrivateNotes}>
                     ${this.i18n["gen.remove"]}
                   </button>
                 </div>
-                ` : nothing }
               ` : nothing }
 
               <div id="private-notes-block" class="ms-2 ${this._privateNotesEditorShowing ? "d-block" : "d-none"}">

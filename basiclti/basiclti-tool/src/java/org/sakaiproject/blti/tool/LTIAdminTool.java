@@ -1506,7 +1506,7 @@ public class LTIAdminTool extends VelocityPortletPaneledAction {
 			}
 		}
 
-		String returnUrl = reqProps.getProperty("returnUrl");
+		String returnUrl = Base64DoubleUrlEncodeSafe.decode(reqProps.getProperty("returnUrl"));
 		String flow = data.getParameters().getString(FLOW_PARAMETER);
 		if (returnUrl != null) {
 			if (id != null) {
@@ -2718,7 +2718,7 @@ public class LTIAdminTool extends VelocityPortletPaneledAction {
 				toolsCI.add(lt);
 			}
 
-			if (foorm.getLong(lt.get(LTIService.LTI_PL_CONTENTEDITOR)) > 0) {
+			if (foorm.getLong(lt.get(LTIService.LTI_MT_LAUNCH)) > 0) {
 				toolsLaunch.add(lt);
 			}
 		}
