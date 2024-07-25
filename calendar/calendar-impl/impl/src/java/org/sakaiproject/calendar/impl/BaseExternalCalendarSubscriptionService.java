@@ -721,7 +721,7 @@ public class BaseExternalCalendarSubscriptionService implements
 		try
 		{
 			ExternalCalendarSubscription calendar;
-			List<CalendarEvent> events;
+			List<? extends CalendarEvent> events;
 			URL _url = new URL(url);
 			if (calendarName == null) calendarName = _url.getFile();
 
@@ -1342,6 +1342,12 @@ public class BaseExternalCalendarSubscriptionService implements
 		{
 			return m_properties
 					.getPropertyFormatted(ResourceProperties.PROP_CALENDAR_LOCATION);
+		}
+
+		public String getSiteId()
+		{
+			return m_properties
+					.getPropertyFormatted(ResourceProperties.PROP_CALENDAR_SITE_ID);
 		}
 
 		public String getEventUrl()
