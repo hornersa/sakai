@@ -47,7 +47,7 @@
     <sakai.ignite.spring.ext.version>1.0.0</sakai.ignite.spring.ext.version>
     <sakai.ignite.hibernate.version>5.3.0</sakai.ignite.hibernate.version>
     <sakai.jackson.version>2.16.1</sakai.jackson.version>
-    <sakai.jsoup.version>1.15.4</sakai.jsoup.version>
+    <sakai.jsoup.version>1.18.1</sakai.jsoup.version>
     <sakai.woodstox.version>6.6.0</sakai.woodstox.version>
     <sakai.stax2.version>4.2.1</sakai.stax2.version>
     <sakai.java.jwt.version>3.1.0</sakai.java.jwt.version>
@@ -74,7 +74,7 @@
     <sakai.spring.hateoas.version>1.5.6</sakai.spring.hateoas.version>
     <sakai.spring.plugin.version>2.0.0.RELEASE</sakai.spring.plugin.version>
     <sakai.tika.version>3.0.0-BETA</sakai.tika.version>
-    <sakai.tomcat.version>9.0.91</sakai.tomcat.version>
+    <sakai.tomcat.version>9.0.93</sakai.tomcat.version>
     <sakai.thymeleaf.version>3.0.15.RELEASE</sakai.thymeleaf.version>
     <sakai.velocity.version>1.6.4</sakai.velocity.version>
     <sakai.log4j.version>2.23.0</sakai.log4j.version>

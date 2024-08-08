@@ -111,6 +111,7 @@ import org.tsugi.lti13.objects.Endpoint;
 import org.tsugi.lti13.objects.LaunchJWT;
 import org.tsugi.lti13.objects.LaunchLIS;
 import org.tsugi.lti13.objects.NamesAndRoles;
+import org.tsugi.lti13.objects.GroupService;
 import org.tsugi.lti13.objects.ResourceLink;
 import org.tsugi.lti13.objects.ToolPlatform;
 import org.tsugi.lti13.objects.ForUser;
@@ -1303,7 +1304,8 @@ public class SakaiBLTIUtil {
 				DeepLinkResponse.RESOURCELINK_AVAILABLE_STARTDATETIME,
 				DeepLinkResponse.RESOURCELINK_AVAILABLE_ENDDATETIME,
 				DeepLinkResponse.RESOURCELINK_SUBMISSION_STARTDATETIME,
-				DeepLinkResponse.RESOURCELINK_SUBMISSION_ENDDATETIME
+				DeepLinkResponse.RESOURCELINK_SUBMISSION_ENDDATETIME,
+				LTICustomVars.COURSEGROUP_ID
 			};
 
 			for (String subKey : jsonSubst) {
@@ -1525,7 +1527,7 @@ public class SakaiBLTIUtil {
 		}
 
 		/**
-		 * An LTI 2.0 ContentItemSelectionRequest launch
+		 * An LTI ContentItemSelectionRequest launch
 		 *
 		 * This must return an HTML message as the [0] in the array If things are
 		 * successful - the launch URL is in [1]
@@ -2105,6 +2107,11 @@ public class SakaiBLTIUtil {
 				// nar.context_memberships_url = getOurServerUrl() + LTI13_PATH + "namesandroles/" + signed_placement;
 				nar.context_memberships_url = getOurServerUrl() + LTI13_PATH + "namesandroles/" + context_id;
 				lj.names_and_roles = nar;
+
+				// SAK-48745 - Add support for GroupService
+				GroupService gs = new GroupService();
+				gs.context_groups_url = getOurServerUrl() + LTI13_PATH + "groupservice/" + context_id;
+				lj.group_service = gs;
 			}
 
 			// Add Sakai Extensions from ltiProps
@@ -3709,4 +3716,48 @@ public class SakaiBLTIUtil {
 		}
 		return key;
 	}
+
+	/**
+	 * Get the correct frameheight for a content / combination based on inheritance rules
+	 */
+	public static String getFrameHeight(Map<String, Object> tool, Map<String, Object> content, String defaultValue) {
+		String height = defaultValue;
+		if (content != null) {
+			Long contentFrameHeight = LTI13Util.getLong(content.get(LTIService.LTI_FRAMEHEIGHT));
+			if ( contentFrameHeight > 0 ) height = contentFrameHeight + "px";
+		}
+
+		if ( tool != null ) {
+			Long toolFrameHeight = LTI13Util.getLong(tool.get(LTIService.LTI_FRAMEHEIGHT));
+			Long allowFrameHeight = LTI13Util.getLong(tool.get(LTIService.LTI_ALLOWFRAMEHEIGHT));
+			if ((StringUtils.isEmpty(height) || allowFrameHeight == 0 ) && toolFrameHeight > 1 ) {
+				height = toolFrameHeight + "px";
+			}
+		}
+		return height;
+	}
+
+	/**
+	 * Get the new page setting for a content / combination based on inheritance rules
+	 */
+	public static boolean getNewpage(Map<String, Object> tool, Map<String, Object> content, boolean defaultValue) {
+		boolean newpage = defaultValue;
+
+		if (content != null ) {
+			Long contentNewpage = LTI13Util.getLongNull(content.get(LTIService.LTI_NEWPAGE));
+			if ( contentNewpage != null ) newpage = (contentNewpage != 0);
+		}
+
+		if ( tool != null ) {
+			Long toolNewpage = LTI13Util.getLongNull(tool.get(LTIService.LTI_NEWPAGE));
+
+			if ( toolNewpage != null ) {
+				// Leave this alone for LTIService.LTI_TOOL_NEWPAGE_CONTENT
+				if ( toolNewpage == LTIService.LTI_TOOL_NEWPAGE_OFF ) newpage = false;
+				if ( toolNewpage == LTIService.LTI_TOOL_NEWPAGE_ON ) newpage = true;
+			}
+		}
+		return newpage;
+	}
+
 }
