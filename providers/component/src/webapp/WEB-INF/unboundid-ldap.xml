@@ -63,9 +63,9 @@
 
 		<!-- Optional. LDAP operation timeout in millis. Defaults 
 			to UnboundidDirectoryProvider.DEFAULT_OPERATION_TIMEOUT_MILLIS (9000) -->
-		<!-- property name="operationTimeout">
-			<value>9000</value>
-		</property -->
+		<property name="operationTimeout">
+			<value>60000</value>
+		</property>
 		
 		<!-- Optional. Control depth of all searches. Possible values:
 			0 - LDAPConnection.SCOPE_BASE - base object only
@@ -141,9 +141,9 @@
 		     indicates that the connection used to process that request may no longer
 		     be valid. May help with networks that close idle connections
 		     Defaults to UnboundidDirectoryProvider.DEFAULT_RETRY_FAILED_OPERATIONS_DUE_TO_INVALID_CONNECTIONS (false) -->
-		<!-- property name="retryFailedOperationsDueToInvalidConnections">
-			<value>false</value>
-		</property -->
+		<property name="retryFailedOperationsDueToInvalidConnections">
+			<value>true</value>
+		</property>
 
 		<!-- Specifies the length of time in milliseconds between periodic background
 			health checks against the available connections in this pool.
@@ -205,12 +205,6 @@
 				<entry key="logicalAttrName">
 					<value>physicalAttrName</value>
 				</entry>
-				<entry key="login"><value>uid</value></entry>
-                                <entry key="distinguishedName"><value>dn</value></entry>
-                                <entry key="firstName"><value>givenName</value></entry>
-                                <entry key="lastName"><value>sn</value></entry>
-                                <entry key="email"><value>mail</value></entry>
-				<entry key="mailAlternateAddress"><value>mailAlternateAddress</value></entry>
 			</map>
 		</property -->
 		
@@ -243,38 +237,20 @@
 	<bean id="org.sakaiproject.unboundid.LdapAttributeMapper"
 			class="org.sakaiproject.unboundid.SimpleLdapAttributeMapper"
 			init-method="init">
-
-	<!-- Non-default bean definition which can be used to support encrypted LDAP properties.
-		 To make use of this, uncomment the bean declaration below (including the 5 properties listed) and comment out the default SimpleLdapAttributeMapper declaration above.-->
-	<!--<bean id="org.sakaiproject.unboundid.LdapAttributeMapper"
-			class="org.sakaiproject.unboundid.SimpleLdapCandidateAttributeMapper"
-			init-method="init">
-
-		<property name="encryption" ref="org.sakaiproject.user.detail.ValueEncryptionUtilities" />
-		<property name="scs" ref="org.sakaiproject.component.api.ServerConfigurationService" />
-		<property name="candidateIdLength"><value>10</value></property>
-		<property name="additionalInfoLength"><value>100</value></property>
-		<property name="studentNumberLength"><value>9</value></property> -->
-
+			
 		<!-- A typical set of attribute mappings. Keys are logical
 		names expected by the application. Values are physical LDAP
 		attribute names. If not specified or empty, defaults to
 		AttributeMappingConstants.DEFAULT_ATTR_MAPPINGS. -->
 		<property name="attributeMappings">
 			<map>
-<!--
-				<entry key="aid"><value>krb5PrincipalName</value></entry>
--->
 				<entry key="login"><value>uid</value></entry>         
 				<entry key="firstName"><value>givenName</value></entry> 
-				<!-- entry key="preferredFirstName"><value>preferredName</value></entry -->
 				<entry key="lastName"><value>sn</value></entry> 
 				<entry key="email"><value>mail</value></entry>  
-				<!-- entry key="groupMembership"><value>groupMembership</value></entry>   
-				<entry key="jpegPhoto"><value>jpegPhoto</value></entry -->   
-
                                 <entry key="distinguishedName"><value>dn</value></entry>
-				<entry key="mailAlternateAddress"><value>mailAlternateAddress</value></entry>
+				<entry key="pluMailPreferredAddress"><value>pluMailPreferredAddress</value></entry>
+                                <entry key="pluPronouns"><value>pluPronouns</value></entry>
 			</map>
 		</property>
 		

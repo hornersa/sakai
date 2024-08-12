@@ -71,6 +71,9 @@ public abstract class AttributeMappingConstants {
 	
 	public static final String DISPLAY_NAME_ATTR_MAPPING_KEY = "displayName";
 	
+	public static final String PREF_EMAIL_ATTR_MAPPING_KEY = "pluMailPreferredAddress";
+	public static final String PRONOUNS_ATTR_MAPPING_KEY = "pluPronouns";
+	
 	/** Default value in {@link #DEFAULT_ATTR_MAPPINGS} representing
 	 * the physical name of a user entry's login (aka Sakai "EID") attribute
 	 */

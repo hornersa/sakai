@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -138,13 +140,19 @@ public class SimpleLdapAttributeMapper implements LdapAttributeMapper {
 		
 		String emailAttr = 
 			attributeMappings.get(AttributeMappingConstants.EMAIL_ATTR_MAPPING_KEY);
+		String prefEmailAttr =
+			attributeMappings.get(AttributeMappingConstants.PREF_EMAIL_ATTR_MAPPING_KEY);
 		MessageFormat valueFormat = valueMappings.get(AttributeMappingConstants.EMAIL_ATTR_MAPPING_KEY);
-		if (valueFormat == null) {
-			return emailAttr + "=" + escapeSearchFilterTerm(emailAddr);
-		} else {
-			valueFormat = (MessageFormat) valueFormat.clone();
-			return emailAttr + "=" + escapeSearchFilterTerm(valueFormat.format(new Object[]{emailAddr}));
-		}
+                String searchTerm = null;
+                if (valueFormat == null) {
+                    searchTerm = escapeSearchFilterTerm(emailAddr);
+                } else {
+                    valueFormat = (MessageFormat) valueFormat.clone();
+                    searchTerm = escapeSearchFilterTerm(valueFormat.format(new Object[]{emailAddr}));
+                }
+                /*                return "(|(" + emailAttr + "=" + searchTerm + ")(" +  
+                                  prefEmailAttr + "=" + searchTerm + "))"; */
+                return emailAttr + "=" + searchTerm;
 	}
 
 	/**
@@ -186,23 +194,38 @@ public class SimpleLdapAttributeMapper implements LdapAttributeMapper {
 	 */
 	public void mapLdapEntryOntoUserData(LDAPEntry ldapEntry, LdapUserData userData) {
 		
-			log.debug("mapLdapEntryOntoUserData(): mapping entry [dn = {}]", ldapEntry.getDN());
+		log.debug("mapLdapEntryOntoUserData(): mapping entry [dn = {}]", ldapEntry.getDN());
         
 		setUserDataDn(ldapEntry, userData);
-        
+
+		boolean hasPreferredEmailAddr = false;
         LDAPAttributeSet ldapAttributeSet = ldapEntry.getAttributeSet();
         Enumeration<LDAPAttribute> ldapAttributes = ldapAttributeSet.getAttributes();
         while (ldapAttributes.hasMoreElements()) {
         	LDAPAttribute ldapAttribute = ldapAttributes.nextElement();
+		String attr = ldapAttribute.getName();
             // we do the reverse lookup here since it will always need to
             // be performed and we want to ensure it only happens once
             // per attribute, regardless of the complexity of the actual
             // mapping onto the user object
             Collection<String> logicalAttrNames = 
-                getReverseAttributeMappings(ldapAttribute.getName());
+		    getReverseAttributeMappings(attr);
+            if (attr.equals(AttributeMappingConstants.PREF_EMAIL_ATTR_MAPPING_KEY))
+                hasPreferredEmailAddr = true;
             mapLdapAttributeOntoUserData(ldapAttribute, userData, logicalAttrNames);
         }
-        
+
+        if (hasPreferredEmailAddr) {
+            Properties p = userData.getProperties();
+            String prefEmail = p.getProperty(AttributeMappingConstants.PREF_EMAIL_ATTR_MAPPING_KEY);
+
+            // Check if a preferred email address is defined                                                            
+            if ((! StringUtils.isEmpty(prefEmail)) && isEmailDomainValid(prefEmail)) {
+                log.info("Preferred email address set as primary address: "  + prefEmail);
+                userData.setEmail(prefEmail);
+            }
+        }
+	
         //enforce use of firstNamePreferred if its set
         userData.setFirstName(usePreferredFirstName(userData));
         
@@ -210,6 +233,15 @@ public class SimpleLdapAttributeMapper implements LdapAttributeMapper {
         // against the entire LDAPEntry
         userData.setType(mapLdapEntryToSakaiUserType(ldapEntry));
 	}
+	
+    private boolean isEmailDomainValid(String email) {
+        if (StringUtils.isEmpty(email))
+            return false;
+        String validEmailPattern = "^[\\S]*@plu\\.edu$";
+        Pattern pattern = Pattern.compile(validEmailPattern);
+        Matcher matcher = pattern.matcher(email);
+        return matcher.matches();
+    }
 	
 	public String getUserBindDn(LdapUserData userData) {
 		return getUserDataDn(userData);
