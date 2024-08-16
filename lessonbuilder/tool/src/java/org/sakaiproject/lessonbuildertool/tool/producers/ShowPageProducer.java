@@ -65,6 +65,7 @@ import org.sakaiproject.lessonbuildertool.SimplePageQuestionResponse;
 import org.sakaiproject.lessonbuildertool.SimplePageQuestionResponseTotals;
 import org.sakaiproject.lessonbuildertool.SimpleStudentPage;
 import org.sakaiproject.lessonbuildertool.model.SimplePageToolDao;
+import org.sakaiproject.lessonbuildertool.service.BltiEntity;
 import org.sakaiproject.lessonbuildertool.service.BltiInterface;
 import org.sakaiproject.lessonbuildertool.service.LessonBuilderAccessService;
 import org.sakaiproject.lessonbuildertool.service.LessonEntity;
@@ -3860,6 +3861,7 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 				fake = true; // need to set this in case it's available for missing entity
 			}
 		} else if (i.getType() == SimplePageItem.BLTI) {
+		    BltiEntity.syncFormatAndSameWindow(i); // correct any prior disparities between format and sameWindow values
 		    LessonEntity lessonEntity = (bltiEntity == null ? null : bltiEntity.getEntity(i.getSakaiId()));
 		    if ("inline".equals(i.getFormat())) {
                 // no availability

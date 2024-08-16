@@ -31,7 +31,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
+import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
 
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +80,8 @@ public class BltiEntity implements LessonEntity, BltiInterface {
     private SimplePageBean simplePageBean;
 
     protected static LTIService ltiService = null; 
+
+    public static final String FORMAT_DEFAULT = "window";
 
     public void setSimplePageBean(SimplePageBean simplePageBean) {
 		this.simplePageBean = simplePageBean;
@@ -425,8 +427,8 @@ public class BltiEntity implements LessonEntity, BltiInterface {
     public int frameSize() {
         loadContent();
         if ( content == null  ) return -1;
-        Long newPage = getLong(content.get(LTIService.LTI_FRAMEHEIGHT));
-        return newPage.intValue();
+        Long frameSize = getLong(content.get(LTIService.LTI_FRAMEHEIGHT));
+        return frameSize.intValue();
     }
     // URL to edit an existing entity.                                                                                                       
     // Can be null if we can't get one or it isn't needed                                                                                    
@@ -599,6 +601,25 @@ public class BltiEntity implements LessonEntity, BltiInterface {
 	return (String) content.get(LTIService.LTI_SITE_ID);
     }
 
+    // If the spi object is an external tool link, modify its sameWindow value to conform to its format value
+    public static void syncFormatAndSameWindow(SimplePageItem i) {
+        syncFormatAndSameWindow(i, i.getFormat());
+    }
 
+    // If the spi object is an external tool link, modify its sameWindow & format values to conform to a given format
+    public static void syncFormatAndSameWindow(SimplePageItem i, String format) {
+        if (i.getType() != SimplePageItem.BLTI)
+            return;
 
+        if (StringUtils.isBlank(format))
+            i.setFormat(FORMAT_DEFAULT);
+        else
+            i.setFormat(format);
+
+        // The display code uses sameWindow despite the redundancy with respect to format
+        if ("window".equals(i.getFormat()))
+            i.setSameWindow(false);
+        else
+            i.setSameWindow(true);
+    }
 }

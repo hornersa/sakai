@@ -322,6 +322,11 @@ public class DBLTIService extends BaseLTIService implements LTIService {
 			newProps.put(LTI_FA_ICON, fa_icon);
 		}
 
+		// If LTI tool newpage can be changed but not set by the user (e.g., check 'Launch in popup'), set the default to LTI_TOOL_NEWPAGE_OFF
+		if (newProps.getProperty(LTI_NEWPAGE) == null) {
+			newProps.setProperty(LTI_NEWPAGE, ((Integer)tool.get(LTI_NEWPAGE) == LTI_TOOL_NEWPAGE_CONTENT) ? new Integer(LTI_TOOL_NEWPAGE_OFF).toString() : ((Integer)tool.get(LTI_NEWPAGE)).toString());
+		}
+
 		if (contentModel == null)
 			return rb.getString("error.invalid.toolid");
 		return insertThingDao("lti_content", contentModel, LTIService.CONTENT_MODEL, newProps, siteId, isAdminRole, isMaintainRole);
@@ -573,6 +578,12 @@ public class DBLTIService extends BaseLTIService implements LTIService {
 		if (!isAdminRole && (Arrays.asList(columns).contains(LTI_SITE_ID))) {
 			newMapping.put(LTI_SITE_ID, siteId);
 		}
+
+		// Transfer any newpage value asserted in newProps to newMapping
+		if (((Map) newProps).containsKey(LTI_NEWPAGE)) {
+			newMapping.put(LTI_NEWPAGE, ((Map) newProps).get(LTI_NEWPAGE));
+		}
+
 		String seqName = foorm.getSqlSequence(table, theKey, m_sql.getVendor());
 
 		String[] insertInfo = foorm.insertForm(newMapping);

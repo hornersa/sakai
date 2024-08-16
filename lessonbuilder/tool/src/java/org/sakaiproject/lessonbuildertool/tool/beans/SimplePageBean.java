@@ -85,6 +85,7 @@ import org.sakaiproject.lessonbuildertool.cc.ZipLoader;
 import org.sakaiproject.lessonbuildertool.model.SimplePageToolDao;
 import org.sakaiproject.lessonbuildertool.service.AjaxServer;
 import org.sakaiproject.lessonbuildertool.service.AssignmentEntity;
+import org.sakaiproject.lessonbuildertool.service.BltiEntity;
 import org.sakaiproject.lessonbuildertool.service.BltiInterface;
 import org.sakaiproject.lessonbuildertool.service.GradebookIfc;
 import org.sakaiproject.lessonbuildertool.service.GroupPermissionsService;
@@ -3270,16 +3271,7 @@ public class SimplePageBean {
 			    i.setSameWindow(false);
 
 			if (i.getType() == SimplePageItem.BLTI) {
-			    if (StringUtils.isBlank(format))
-				i.setFormat("");
-			    else
-				i.setFormat(format);
-			    // this is redundant, but the display code uses it
-			    if ("window".equals(format))
-				i.setSameWindow(false);
-			    else
-				i.setSameWindow(true);
-
+			    BltiEntity.syncFormatAndSameWindow(i, format);
 			    i.setHeight(height);
 			}
 
@@ -3655,17 +3647,7 @@ public class SimplePageBean {
 				    // logic from other item types
 				    i.setSakaiId(selectedBlti);
 				    i.setName(selectedObject.getTitle());
-				    if (StringUtils.isBlank(format))
-					i.setFormat("");
-				    else
-					i.setFormat(format);
-
-				    // this is redundant, but the display code uses it
-				    if ("window".equals(format))
-					i.setSameWindow(false);
-				    else
-					i.setSameWindow(true);
-
+				    BltiEntity.syncFormatAndSameWindow(i, format);
 				    i.setHeight(height);
 				    setItemGroups(i, selectedGroups);
 				    update(i);
@@ -3686,10 +3668,7 @@ public class SimplePageBean {
 					i.setHeight(Integer.toString(height));
 				    else
 					i.setHeight("");
-				    if (StringUtils.isBlank(format))
-					i.setFormat("");
-				    else
-					i.setFormat(format);
+				    i.setFormat(blti.isPopUp() ? "window" : "page");
 				}
 				saveItem(i);
 			    }
