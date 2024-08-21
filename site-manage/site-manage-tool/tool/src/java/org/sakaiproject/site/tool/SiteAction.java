@@ -138,6 +138,7 @@ import org.sakaiproject.importer.api.ResetOnCloseInputStream;
 import org.sakaiproject.importer.api.SakaiArchive;
 import org.sakaiproject.javax.PagingPosition;
 import org.sakaiproject.lti.api.LTIService;
+import org.sakaiproject.basiclti.util.SakaiBLTIUtil;
 import org.sakaiproject.memory.api.Cache;
 import org.sakaiproject.memory.api.MemoryService;
 import org.sakaiproject.rubrics.api.RubricsService;
@@ -4210,9 +4211,9 @@ public class SiteAction extends PagedResourceActionII {
 								Map<String, Object> m = new HashMap<>();
 								Map<String, Object> ltiToolValues = ltiService.getTool(Long.valueOf(ltiToolId), ltiSiteId);
 								if (ltiToolValues != null) {
-									m.put("toolTitle", ltiToolValues.get(LTIService.LTI_TITLE));
-									m.put("pageTitle", ltiToolValues.get(LTIService.LTI_PAGETITLE));
-									m.put(LTIService.LTI_TITLE, (String) content.get(LTIService.LTI_TITLE));
+									m.put(LTIService.LTI_TITLE, SakaiBLTIUtil.getToolTitle(ltiToolValues, content, null));
+									m.put("toolTitle", SakaiBLTIUtil.getToolTitle(ltiToolValues, content, null));
+									m.put("pageTitle", SakaiBLTIUtil.getPageTitle(ltiToolValues, content, null));
 									m.put("contentKey", content.get(LTIService.LTI_ID));
 									linkedLtiContents.put(ltiToolId, m);
 								}
@@ -6748,8 +6749,10 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 					// in Oracle, both the lti tool id and the toolorder are returned as BigDecimal, which cannot be cast into Integer directly
 					Integer ltiId = Integer.valueOf(toolIdString);
 					if (ltiId != null) {
-						String ltiToolId = ltiId.toString(); 
-						if (ltiToolId != null && ((!toolStealthed && allowedForSite) || ltiToolSelected) ) {
+						String ltiToolId = ltiId.toString();
+						boolean toolDeployed = ltiService.toolDeployed(Long.valueOf(toolIdString), siteId);
+
+						if (ltiToolId != null && ((!toolStealthed && allowedForSite) || ltiToolSelected || toolDeployed) ) {
 							String relativeWebPath = null;
 							MyTool newTool = new MyTool();
 							newTool.title = StringUtils.defaultString(tool.get("title").toString());

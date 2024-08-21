@@ -452,21 +452,6 @@ public class SakaiBLTIUtil {
 			return true;
 		}
 
-		// Place the custom values into the launch
-		public static void addCustomToLaunch(Properties ltiProps, Properties custom)
-		{
-			Enumeration<?> e = custom.propertyNames();
-			while (e.hasMoreElements()) {
-				String keyStr = (String) e.nextElement();
-				String value =  custom.getProperty(keyStr);
-				setProperty(ltiProps,"custom_"+keyStr,value);
-				String mapKeyStr = BasicLTIUtil.mapKeyName(keyStr);
-				if ( ! mapKeyStr.equals(keyStr) ) {
-					setProperty(ltiProps,"custom_"+mapKeyStr,value);
-				}
-			}
-		}
-
 		public static String encryptSecret(String orig) {
 			String encryptionKey = ServerConfigurationService.getString(BASICLTI_ENCRYPTION_KEY, null);
 			return encryptSecret(orig, encryptionKey);
@@ -596,6 +581,11 @@ public class SakaiBLTIUtil {
 			setProperty(ltiProps, BasicLTIConstants.LIS_PERSON_SOURCEDID, user.getEid());
 			setProperty(lti13subst, LTICustomVars.USER_USERNAME, user.getEid());
 			setProperty(lti13subst, LTICustomVars.PERSON_SOURCEDID, user.getEid());
+
+			ResourceProperties userProperties = user.getProperties();
+			userProperties.getPropertyNames().forEachRemaining(name ->
+				setProperty(lti13subst, BasicLTIConstants.SAKAI_USER_PROPERTY + "." + name, userProperties.getProperty(name))
+			);
 
 			UserTimeService userTimeService = ComponentManager.get(UserTimeService.class);
 			TimeZone tz = userTimeService.getLocalTimeZone(user.getId());
@@ -1391,7 +1381,7 @@ public class SakaiBLTIUtil {
 			log.debug("custom={}", custom);
 
 			// Place the custom values into the launch
-			addCustomToLaunch(ltiProps, custom);
+			LTI13Util.addCustomToLaunch(ltiProps, custom);
 
 			if (isLTI13) {
 				return postLaunchJWT(toolProps, ltiProps, site, tool, content, rb);
@@ -1671,7 +1661,7 @@ public class SakaiBLTIUtil {
 			log.debug("custom={}", custom);
 
 			// Place the custom values into the launch
-			addCustomToLaunch(ltiProps, custom);
+			LTI13Util.addCustomToLaunch(ltiProps, custom);
 
 			if ( isLTI13 ) {
 				Properties toolProps = new Properties();
@@ -3758,6 +3748,53 @@ public class SakaiBLTIUtil {
 			}
 		}
 		return newpage;
+	}
+
+	/**
+	 * Get the title for a content / combination based on inheritance rules
+	 */
+	public static String getToolTitle(Map<String, Object> tool, Map<String, Object> content, String defaultValue) {
+		String title = defaultValue;
+
+		if (content != null ) {
+			String contentTitle = (String) content.get(LTIService.LTI_TITLE);
+			if ( StringUtils.isNotEmpty(contentTitle) ) title = contentTitle;
+		}
+
+		if ( tool != null ) {
+			Long allowTitle = LTI13Util.getLongNull(tool.get(LTIService.LTI_ALLOWTITLE));
+
+			if ( allowTitle == 1 ) {
+				String toolTitle = (String) tool.get(LTIService.LTI_TITLE);
+				if ( StringUtils.isNotEmpty(toolTitle) ) title = toolTitle;
+			}
+		}
+		return title;
+	}
+
+	/**
+	 * Get the page title for a content / combination based on inheritance rules
+	 */
+	public static String getPageTitle(Map<String, Object> tool, Map<String, Object> content, String defaultValue) {
+		String title = defaultValue;
+
+		if (content != null ) {
+			String contentTitle = (String) content.get(LTIService.LTI_PAGETITLE);
+			if ( StringUtils.isNotEmpty(contentTitle) ) title = contentTitle;
+		}
+
+		if ( tool != null ) {
+			Long allowTitle = LTI13Util.getLongNull(tool.get(LTIService.LTI_ALLOWPAGETITLE));
+
+			if ( allowTitle == 1 ) {
+				String toolTitle = (String) tool.get(LTIService.LTI_PAGETITLE);
+				if ( StringUtils.isNotEmpty(toolTitle) ) title = toolTitle;
+			}
+		}
+
+		if ( StringUtils.isEmpty(title) ) return getToolTitle(tool, content, defaultValue);
+
+		return title;
 	}
 
 }

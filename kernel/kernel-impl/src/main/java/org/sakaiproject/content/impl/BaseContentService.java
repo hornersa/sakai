@@ -72,17 +72,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
 import org.sakaiproject.alias.api.AliasService;
@@ -5531,7 +5527,7 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 
             // tika magic and name detection
             if (m_useMimeMagic
-                    && !m_ignoreExtensions.contains(FilenameUtils.getExtension(edit.getId()))
+                    && !m_ignoreExtensions.contains(org.springframework.util.StringUtils.getFilenameExtension(edit.getId()))
                     && !CollectionUtils.containsAny(m_ignoreMimeTypes, currentContentType, detectedByName)) {
                 try {
                     // tika detect doesn't modify the original stream but stream must support reset
@@ -6378,7 +6374,7 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 			else
 			{
 				// use the last part, the file name part of the id, for the download file name
-				String fileName = FilenameUtils.getName(ref.getId());
+				String fileName = org.springframework.util.StringUtils.getFilename(ref.getId());
 				String disposition = null;
 
 				if (Validator.letBrowserInline(contentType))
@@ -10880,20 +10876,33 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 		 * 
 		 * @return The size of all the resource body bytes within this collection in Kbytes.
 		 */
-		public long getBodySizeK()
-		{
-			long size = 0;
+        public long getBodySizeK() {
+            long size = 0;
+            String context = getContext();
+            if (context != null) {
+                Map<String, Long> sizes = getSizeForContext(context);
+                if (m_id.startsWith(COLLECTION_DROPBOX)) {
+                    size = sizes.keySet().stream()
+                            .filter(k -> k.startsWith(COLLECTION_DROPBOX))
+                            .mapToLong(k -> Long.valueOf(sizes.get(k)))
+                            .sum();
+                } else if (m_id.startsWith(COLLECTION_USER)) {
+                    size = sizes.keySet().stream()
+                            .filter(k -> k.startsWith(COLLECTION_USER))
+                            .mapToLong(k -> Long.valueOf(sizes.get(k)))
+                            .sum();
+                } else {
+                    size = sizes.keySet().stream()
+                            .filter(k -> k.startsWith(COLLECTION_SITE))
+                            .mapToLong(k -> Long.valueOf(sizes.get(k)))
+                            .sum();
+                }
 
-			String context = getContext();
-			if(context != null || m_id.startsWith(COLLECTION_DROPBOX))
-			{
-				size = getSizeForContext(context!=null?context:m_id)/1000L;
-			}
-
-			log.debug("getBodySizeK(): collection: {} size: {}",getId(),size);
-			return size;
-
-		} // getBodySizeK
+                if (size > 0) size /= 1024L;
+            }
+            log.debug("getBodySizeK(): collection: {} size: {}", getId(), size);
+            return size;
+        }
 
 		/**
 		 * Access a List of the collections' internal members as full ContentResource or ContentCollection objects.
@@ -12982,9 +12991,9 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 		siteContentAdvisorsProviders.put(type, advisor);		
 	}
 
-	protected long getSizeForContext(String context) 
+	public Map<String, Long> getSizeForContext(String context)
 	{
-		return 0;
+		return Collections.emptyMap();
 	}
 
 	public Map<String, String> transferCopyEntities(String fromContext, String toContext, List<String> ids, List<String> options, boolean cleanup) {
