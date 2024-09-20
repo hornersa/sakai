@@ -48,7 +48,7 @@ import static org.sakaiproject.assignment.api.AssignmentServiceConstants.PROP_AS
 import static org.sakaiproject.assignment.api.AssignmentServiceConstants.REFERENCE_ROOT;
 import static org.sakaiproject.assignment.api.AssignmentServiceConstants.SECURE_UPDATE_ASSIGNMENT;
 
-import org.sakaiproject.util.CalendarUtil;
+import org.sakaiproject.calendar.api.CalendarConstants;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -1039,6 +1039,8 @@ public class AssignmentAction extends PagedResourceActionII {
     private static final int IDX_GRADES_CSV_GRADE = 5;
     // search string for submission list
     private static final String VIEW_SUBMISSION_SEARCH = "view_submission_search";
+    // search string for assignment list
+    private static final String SEARCH_ASSIGNMENTS = "searchString";
     /******** Model Answer ************/
     private static final String MODELANSWER = "modelAnswer";
     private static final String MODELANSWER_TEXT = "modelAnswer.text";
@@ -4394,6 +4396,7 @@ public class AssignmentAction extends PagedResourceActionII {
             } else {
                 context.put("method", "doGrade_assignment");
                 context.put("urlParams", "assignmentId=" + assignmentRef);
+                context.put("selectedGroup", state.getAttribute(VIEW_SUBMISSION_LIST_OPTION));
             }
             return template + TEMPLATE_INSTRUCTOR_GRADE_SUBMISSION_WITH_GRADER;
         } else {
@@ -6024,6 +6027,30 @@ public class AssignmentAction extends PagedResourceActionII {
     }
 
     /**
+     * Search assignments by title
+     */
+    public void doView_assignments_list_search(RunData data) {
+        SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+
+        resetPaging(state);
+        state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
+        state.setAttribute(SORTED_BY, SORTED_BY_DEFAULT);
+        state.setAttribute(SORTED_ASC, Boolean.TRUE.toString());
+
+        ParameterParser params = data.getParameters();
+        state.setAttribute(SEARCH_ASSIGNMENTS, params.getString("search"));
+    }
+
+    public void doView_assignments_list_search_clear(RunData data) {
+        SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+        state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
+        state.setAttribute(SORTED_BY, SORTED_BY_DEFAULT);
+        state.setAttribute(SORTED_ASC, Boolean.TRUE.toString());
+        
+        state.removeAttribute(SEARCH_ASSIGNMENTS);
+    }
+
+    /**
      * Filter the assignments list by AssignmentFilter
      */
     public List<Assignment> filterAssignments(List<Assignment> assignmentList,AssignmentFilter filter) {
@@ -6230,18 +6257,18 @@ public class AssignmentAction extends PagedResourceActionII {
                 state.setAttribute(ATTACHMENTS, referenceList);
             } else {
                 // student can't submit
-                if (submission != null
-                        && (submission.getUserSubmission() || submission.getReturned())
-                        && assignment.getTypeOfSubmission() != Assignment.SubmissionType.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION) {
-                    // if returned, send to grade view
+                if (submission != null && (submission.getUserSubmission() || submission.getReturned())) {
+                    // if submission is by student or it has been returned
                     if (assignment.getIsGroup() && !rangeAndGroups.validateUserGroups(state, user.getId(), assignment)) {
+                        // group project and groups are invalid
                         mode = MODE_STUDENT_VIEW_GROUP_ERROR;
                     } else {
+                        // otherwise, send to grade view
                         state.setAttribute(VIEW_GRADE_SUBMISSION_ID, AssignmentReferenceReckoner.reckoner().submission(submission).reckon().getReference());
                         mode = MODE_STUDENT_VIEW_GRADE;
                     }
                 } else {
-                    // send to assignment view
+                    // no submission send to assignment view
                     state.setAttribute(VIEW_ASSIGNMENT_ID, assignmentReference);
                     mode = MODE_STUDENT_VIEW_ASSIGNMENT;
                 }
@@ -9698,7 +9725,7 @@ public class AssignmentAction extends PagedResourceActionII {
         if (c != null && e != null && assignment != null) {
             CalendarEventEdit edit = c.getEditEvent(e.getId(), org.sakaiproject.calendar.api.CalendarService.EVENT_ADD_CALENDAR);
 
-            edit.setField(CalendarUtil.NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID, assignment.getId());
+            edit.setField(CalendarConstants.NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID, assignment.getId());
             edit.setField(AssignmentConstants.NEW_ASSIGNMENT_OPEN_DATE_ANNOUNCED, assignmentService.getUsersLocalDateTimeString(assignment.getOpenDate()));
 
             c.commitEvent(edit);
@@ -13286,6 +13313,14 @@ public class AssignmentAction extends PagedResourceActionII {
                         tagIds.addAll(addInstructorAndGroupTags(a));
                         return (tagIds.containsAll(selectedTags));
                     }).collect(Collectors.toList());
+                }
+                
+                //Search assignments by title
+                String searchTerm = (String) state.getAttribute(SEARCH_ASSIGNMENTS);
+                if (searchTerm != null && !searchTerm.isEmpty()) {
+                    returnResources = ((List<Assignment>)returnResources).stream()
+                        .filter(a -> a.getTitle().equalsIgnoreCase(searchTerm))
+                        .collect(Collectors.toList());
                 }
 
                 state.setAttribute(HAS_MULTIPLE_ASSIGNMENTS, returnResources.size() > 1);

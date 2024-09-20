@@ -22,11 +22,9 @@
 package org.sakaiproject.tool.assessment.ui.listener.author;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -41,8 +39,6 @@ import javax.faces.event.AbortProcessingException;
 import javax.faces.event.ActionEvent;
 import javax.faces.event.ActionListener;
 import javax.faces.model.SelectItem;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 
 import lombok.extern.slf4j.Slf4j;
@@ -52,7 +48,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.sakaiproject.authz.api.AuthzGroup.RealmLockMode;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.component.cover.ServerConfigurationService;
-import org.sakaiproject.email.cover.EmailService;
 import org.sakaiproject.event.api.EventTrackingService;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.grading.api.InvalidCategoryException;
@@ -98,7 +93,6 @@ import org.sakaiproject.tool.assessment.ui.bean.author.AssessmentSettingsBean;
 import org.sakaiproject.tool.assessment.ui.bean.author.AuthorBean;
 import org.sakaiproject.tool.assessment.ui.bean.author.PublishRepublishNotificationBean;
 import org.sakaiproject.tool.assessment.ui.bean.authz.AuthorizationBean;
-import org.sakaiproject.tool.assessment.ui.bean.evaluation.TotalScoresBean;
 import org.sakaiproject.tool.assessment.ui.listener.util.ContextUtil;
 import org.sakaiproject.tool.assessment.util.TextFormat;
 import org.sakaiproject.tool.cover.ToolManager;
@@ -145,40 +139,47 @@ public class PublishAssessmentListener
   @Override
   public void processAction(ActionEvent ae) throws AbortProcessingException {
 
-	  repeatedPublishLock.lock();
+      repeatedPublishLock.lock();
+      boolean bulkPublish = false;
 
-	  try {
-  		//FacesContext context = FacesContext.getCurrentInstance();
-        if (ae == null) {
-            repeatedPublish = false;
-        } else {
-  			UIComponent eventSource = (UIComponent) ae.getSource();
-  			ValueBinding vb = eventSource.getValueBinding("value");
-  			if (vb == null) {
-  				repeatedPublish = false;
-  				return;
-  			}
-  			else {
-  				String buttonValue = (String) vb.getExpressionString(); 
-  				if(buttonValue.endsWith(".button_unique_save_and_publish}"))
-  				{
-  					repeatedPublish = false;
-  					return;
-  				}
-  			}
-  		}
+      try {
+          // If instructor goes straight to publish from the main authoring page, the ae will be null and the instructor needs to do one more step before publishing
+          if (ae == null) {
+              repeatedPublish = false;
+              return;
+          }
 
-		if (!repeatedPublish) {
+          UIComponent eventSource = (UIComponent) ae.getSource();
+          ValueBinding vb = eventSource.getValueBinding("value");
 
-			AuthorBean author = (AuthorBean) ContextUtil.lookupBean("author");
+          // We are coming from a different listener and being thrown over here. This helps determine where we are coming from
+          // See ActionSelectListener
+          String origin = (String) eventSource.getAttributes().get("origin");
 
-  			AuthorizationBean authorization = (AuthorizationBean) ContextUtil.lookupBean("authorization");
+          // This is the bulk publish option: let it through
+          if ("publish_selected".equals(origin)) {
+              repeatedPublish = false;
+              bulkPublish = true;
+          }
+          else if (vb == null) {
+              repeatedPublish = false;
+              return;
+          }
+          else {
+              String buttonValue = vb.getExpressionString();
+              if (buttonValue.endsWith(".button_unique_save_and_publish}")) {
+                  repeatedPublish = false;
+                  return;
+              }
+          }
 
-  			AssessmentSettingsBean assessmentSettings = (AssessmentSettingsBean) ContextUtil.lookupBean("assessmentSettings");
+          if (!repeatedPublish) {
+              AuthorBean author = (AuthorBean) ContextUtil.lookupBean("author");
+              AuthorizationBean authorization = (AuthorizationBean) ContextUtil.lookupBean("authorization");
+              AssessmentSettingsBean assessmentSettings = (AssessmentSettingsBean) ContextUtil.lookupBean("assessmentSettings");
+              AssessmentService assessmentService = new AssessmentService();
 
-  			AssessmentService assessmentService = new AssessmentService();
-
-			if (assessmentSettings != null && assessmentSettings.getAssessmentId() != null) {
+              if (!bulkPublish && assessmentSettings != null && assessmentSettings.getAssessmentId() != null) {
 
                 // This is a single publishing operation
                 AssessmentFacade singleAssessment = assessmentService.getAssessment(
@@ -192,7 +193,7 @@ public class PublishAssessmentListener
                 authorActionListener.prepareAssessmentsList(author, authorization, assessmentService, gradingService, publishedAssessmentService);
                 repeatedPublish = true;
                 return;
-            }
+              }
 
             // Assume this is a bulk publishing operation
             List assessmentList = author.getAllAssessments();
@@ -291,7 +292,7 @@ public class PublishAssessmentListener
 
       // The notification message will be used by the calendar event
       PublishRepublishNotificationBean publishRepublishNotification = (PublishRepublishNotificationBean) ContextUtil.lookupBean("publishRepublishNotification");
-      sendEmailNotification = publishRepublishNotification.getSendNotification();
+      sendEmailNotification = publishRepublishNotification.isSendNotification();
       String notificationMessage = getNotificationMessage(publishRepublishNotification, assessmentSettings.getTitle(), assessmentSettings.getReleaseTo(),
                                                             assessmentSettings.getStartDateInClientTimezoneString(), assessmentSettings.getPublishedUrl(),
                                                             assessmentSettings.getDueDateInClientTimezoneString(), assessmentSettings.getTimedHours(), assessmentSettings.getTimedMinutes(),
@@ -299,7 +300,6 @@ public class PublishAssessmentListener
                                                             assessmentSettings.getFeedbackDelivery(), assessmentSettings.getFeedbackDateInClientTimezoneString(),
                                                             assessmentSettings.getFeedbackEndDateInClientTimezoneString(), assessmentSettings.getFeedbackScoreThreshold(),
                                                             assessmentSettings.getAutoSubmit(), assessmentSettings.getLateHandling(), assessmentSettings.getRetractDateString());
-
 
       ExtendedTimeFacade extendedTimeFacade = PersistenceService.getInstance().getExtendedTimeFacade();
       extendedTimeFacade.copyEntriesToPub(pub.getData(), assessmentSettings.getExtendedTimes());
@@ -355,7 +355,7 @@ public class PublishAssessmentListener
         }
       }
 
-		  //update Calendar Events
+      // update Calendar Events
       boolean addDueDateToCalendar = FacesContext.getCurrentInstance().getExternalContext().getRequestParameterMap().get("publishAssessmentForm:calendarDueDate") != null;
       calendarService.updateAllCalendarEvents(pub, assessmentSettings.getReleaseTo(), assessmentSettings.getGroupsAuthorized(), rl.getString("calendarDueDatePrefix") + " ", addDueDateToCalendar, notificationMessage);
 
@@ -486,70 +486,8 @@ public class PublishAssessmentListener
     }
     return error;
   }
-  
-  public void sendNotification(PublishedAssessmentFacade pub, PublishedAssessmentService service, String subject, String message,
-		  String releaseTo) {
-	  TotalScoresBean totalScoresBean = (TotalScoresBean) ContextUtil.lookupBean("totalScores");
-	  
-	  boolean groupRelease = AssessmentAccessControlIfc.RELEASE_TO_SELECTED_GROUPS.equals(releaseTo);
-	  if (groupRelease) {
-		  totalScoresBean.setSelectedSectionFilterValue(TotalScoresBean.RELEASED_SECTIONS_GROUPS_SELECT_VALUE);
-	  }
-	  else {
-		  totalScoresBean.setSelectedSectionFilterValue(TotalScoresBean.ALL_SECTIONS_SELECT_VALUE);
-	  }
 
-	  totalScoresBean.setPublishedId(pub.getPublishedAssessmentId().toString());
-	  Map useridMap= totalScoresBean.getUserIdMap(TotalScoresBean.CALLED_FROM_NOTIFICATION_LISTENER, AgentFacade.getCurrentSiteId()); 
-	  AgentFacade agent = null;
-
-	  AgentFacade instructor = new AgentFacade();
-	  ArrayList<InternetAddress> toIAList = new ArrayList<>();
-	  try {
-		  toIAList.add(new InternetAddress(instructor.getEmail())); // send one copy to instructor
-	  } catch (AddressException e) {
-		  log.warn("AddressException encountered when constructing instructor's email.");
-	  }
-	  Iterator iter = useridMap.keySet().iterator();
-
-	  while (iter.hasNext()) {
-		  String userUid = (String) iter.next();
-		  agent = new AgentFacade(userUid);
-		  InternetAddress ia = null;
-		  try {
-			  ia = new InternetAddress(agent.getEmail()); 
-		  } catch (AddressException e) {
-			  log.warn("AddressException encountered when constructing toIAList email. userUid = " + userUid);
-		  }
-		  if (ia != null) {
-			  toIAList.add(ia);
-		  }
-	  }
-	  
-	  InternetAddress[] toIA = new InternetAddress[toIAList.size()];
-	  int count = 0;
-	  Iterator iter2 = toIAList.iterator();
-	  while (iter2.hasNext()) {
-		  toIA[count++] = (InternetAddress) iter2.next();
-	  }
-
-      String noReplyEmailAddress = ServerConfigurationService.getSmtpFrom();
-      log.debug("Sending email from '{}' when an assessment has been published.", noReplyEmailAddress);
-      InternetAddress[] noReply = new InternetAddress[1];
-      InternetAddress from = null;
-      try {
-          from = new InternetAddress(noReplyEmailAddress);
-          noReply[0] = from;
-      } catch (AddressException e) {
-          log.warn("AddressException encountered when constructing {} email.", noReplyEmailAddress);
-      }
-	  
-	  List<String> headers = new  ArrayList<String>();
-	  headers.add("Content-Type: text/html");
-	  EmailService.sendMail(from, toIA, subject, message, noReply, noReply, headers);
-  }
-  
-  public String getNotificationMessage(PublishRepublishNotificationBean publishRepublishNotification, String title, String releaseTo, String startDateString, String publishedURL, String dueDateString,
+    public String getNotificationMessage(PublishRepublishNotificationBean publishRepublishNotification, String title, String releaseTo, String startDateString, String publishedURL, String dueDateString,
 										Integer timedHours, Integer timedMinutes, String unlimitedSubmissions, String submissionsAllowed, String scoringType, String feedbackDelivery,
 										String feedbackDateString, String feedbackEndDateString, String feedbackScoreThreshold, boolean autoSubmitEnabled, String lateHandling,
 										String retractDateString) {
