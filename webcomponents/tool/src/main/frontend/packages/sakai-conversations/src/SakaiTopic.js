@@ -18,10 +18,10 @@ export class SakaiTopic extends reactionsAndUpvotingMixin(SakaiElement) {
     isInstructor: { attribute: "is-instructor", type: Boolean },
     canViewAnonymous: { attribute: "can-view-anonymous", type: Boolean },
     canViewDeleted: { attribute: "can-view-deleted", type: Boolean },
+    reactionsAllowed: { attribute: "reactions-allowed", type: Boolean },
 
     _postEditorDisplayed: { state: true },
     _replying: { state: true },
-    _i18n: { state: true },
   };
 
   constructor() {
@@ -698,7 +698,7 @@ export class SakaiTopic extends reactionsAndUpvotingMixin(SakaiElement) {
             >
               <div class="topic-option">
                 <div><i class="si si-bookmark${this.topic.bookmarked ? "-fill" : ""}"></i></div>
-                <div>${this._i18n.bookmark}</div>
+                <div>${this.topic.bookmarked ? this._i18n.unbookmark : this._i18n.bookmark}</div>
               </div>
             </a>
           </div>
@@ -711,13 +711,15 @@ export class SakaiTopic extends reactionsAndUpvotingMixin(SakaiElement) {
                 title="${this.topic.pinned ? this._i18n.unpin_tooltip : this._i18n.pin_tooltip}">
               <div class="topic-option">
                 <div><i class="si si-pin${this.topic.pinned ? "-fill" : ""}"></i></div>
-                <div>${this._i18n.pin}</div>
+                <div>${this.topic.pinned ? this._i18n.unpin : this._i18n.pin}</div>
               </div>
             </a>
           </div>
           ` : nothing }
         </div>
-        ${this.renderReactionsBar(this.topic.reactionTotals)}
+        ${this.reactionsAllowed ? html`
+          ${this.renderReactionsBar(this.topic)}
+        ` : nothing}
         <div class="conversations-actions-block d-flex mb-1">
           ${this._renderReactionsBlock(this.topic)}
           ${this._renderUpvoteBlock(this.topic)}
@@ -785,6 +787,7 @@ export class SakaiTopic extends reactionsAndUpvotingMixin(SakaiElement) {
                   ?is-instructor="${this.isInstructor}"
                   ?can-view-anonymous="${this.canViewAnonymous}"
                   ?can-view-deleted="${this.canViewDeleted}"
+                  ?reactions-allowed="${this.reactionsAllowed}"
                   site-id="${this.topic.siteId}"
                   @post-updated=${this._postUpdated}
                   @post-deleted=${this._postDeleted}
